@@ -25,6 +25,12 @@ class ScannerStorage {
 		}
 	}
 
+	public  static function clean() {
+		self::_connect();
+
+		self::$redis->flushDB();
+	}
+
 	public static function get($name) {
 
 		self::_connect();

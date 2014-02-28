@@ -1,3 +1,4 @@
 #!/bin/bash
 
-php composer.phar $1 php-amqplib-master/composer.json
+cd php-amqplib/
+/usr/bin/env php ../composer.phar $1

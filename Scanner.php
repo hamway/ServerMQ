@@ -6,42 +6,20 @@
  * Time: 15:41
  */
 
-use PhpAmqpLib\Connection\AMQPConnection;
-use PhpAmqpLib\Message\AMQPMessage;
-
 class Scanner {
 	private $domain;
 	private $path;
 
-	/** MQ Config */
-	private $mqConfig = array(
-		'host' => 'localhost',
-		'port' => 5672,
-		'user' => 'scanner',
-		'pass' => 'scanner',
-		'vhost' => '/',
-		'exchange' => 'router',
-		'queue' => 'msgs',
-		'consumer_tag' => 'consumer'
-	);
-	/** @var \PhpAmqpLib\Connection\AMQPConnection */
-	private $mqHandler = false;
-	/** @var  \PhpAmqpLib\Channel\AMQPChannel */
-	private $mqChannel;
-	private $mqDebug = true;
-	/** MQ Config End */
-
-	/** @var array List parsed link. */
 	private $sitemap = array();
-	/** @var array list need parse link. */
 	private $needParse = array();
 
-	/** @var mixed Curl handler. */
 	private $curl;
 
 	public function __construct($domain, $path = "", $fork = false) {
 		$this->domain = $domain;
 		$this->path = $path;
+
+		ScannerStorage::clean();
 
 		$url = "http://". $domain;
 
@@ -49,72 +27,20 @@ class Scanner {
 			$url .= $path;
 		}
 
-		if (!$this->mqHandler)
-			$this->_connectMQ();
-
 		if (!$fork)
-			$this->_addMessageToMQ($url);
-
-		$this->mqChannel->basic_consume(
-			$this->mqConfig['queue'],
-			$this->mqConfig['consumer_tag'],
-			false,
-			false,
-			false,
-			false,
-			function($msg) {
-				$this->process_message($msg);
-			});
+			QueueServer::addMessage($url);
 
 
 		$this->curl = curl_init();
-		while(count($this->mqChannel->callbacks)) {
-			$this->mqChannel->wait();
+
+		$func = '$this->scan()';
+
+		$channel = QueueServer::getChannel();
+		QueueServer::setCallback($func);
+
+		while(count($channel->callbacks)) {
+			$channel->wait();
 		}
-	}
-
-	private function process_message($msg) {
-
-		if ($msg->body === 'quit') {
-			$msg->delivery_info['channel']->
-				basic_cancel($msg->delivery_info['consumer_tag']);
-		}
-
-		/** @var $msg \PhpAmqpLib\Message\AMQPMessage */
-		echo $msg->body, PHP_EOL;
-		$this->scan($msg->body);
-		$this->writeParsedLink($msg->body);
-
-		$msg->delivery_info['channel']->
-			basic_ack($msg->delivery_info['delivery_tag']);
-
-
-	}
-
-	private function _connectMQ() {
-		$conn = new AMQPConnection(
-			$this->mqConfig['host'],
-			$this->mqConfig['port'],
-			$this->mqConfig['user'],
-			$this->mqConfig['pass'],
-			$this->mqConfig['vhost']
-		);
-
-		if ($conn) {
-			$this->mqHandler = $conn;
-			$ch = $conn->channel();
-			if ($ch) {
-				$this->mqChannel = $ch;
-				$ch->queue_declare($this->mqConfig['queue'], false, true, false, false);
-				$ch->exchange_declare($this->mqConfig['exchange'], 'direct', false, true, false);
-				$ch->queue_bind($this->mqConfig['queue'], $this->mqConfig['exchange']);
-			}
-		}
-	}
-
-	private function _addMessageToMQ($message) {
-		$msg = new AMQPMessage(trim($message), array('content_type' => 'text/plain', 'delivery_mode' => 2));
-		$this->mqChannel->basic_publish($msg, $this->mqConfig['exchange']);
 	}
 
 	/** Scanner worker */
@@ -132,7 +58,7 @@ class Scanner {
 		return curl_exec($this->curl);
 	}
 
-	private function scan($url) {
+	private function scan($url=null) {
 
 		$data = $this->_getUrl($url);
 
@@ -187,7 +113,7 @@ class Scanner {
 			$this->needParse[] = $url;
 			ScannerStorage::set('parsing', $this->needParse);
 			// Add link to rabbit
-			$this->_addMessageToMQ($url);
+			QueueServer::addMessage($url);
 		}
 	}
 
@@ -202,8 +128,6 @@ class Scanner {
 	}
 
 	public function __destruct() {
-		$this->mqChannel->close();
-		$this->mqHandler->close();
 		curl_close($this->curl);
 	}
 } 
