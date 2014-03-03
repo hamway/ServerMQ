@@ -9,17 +9,34 @@
 class Scanner {
 	private $domain;
 	private $path;
+	protected static $instance;
 
 	private $sitemap = array();
 	private $needParse = array();
 
 	private $curl;
 
-	public function __construct($domain, $path = "", $fork = false) {
+	public static function getInstance() {
+		return  (self::$instance === null) ?
+			self::$instance = new self() :
+			self::$instance;
+	}
+
+	public function __construct() {
+		$this->domain = ScannerStorage::getParams('domain');
+		$this->path = ScannerStorage::getParams('path');
+	}
+
+	public function start($domain = false, $path = "", $fork = false) {
+		if(!$fork)
+			ScannerStorage::clean();
+
 		$this->domain = $domain;
 		$this->path = $path;
 
-		ScannerStorage::clean();
+		ScannerStorage::setParams('domain', $domain);
+		ScannerStorage::setParams('path', $path);
+
 
 		$url = "http://". $domain;
 
@@ -30,13 +47,8 @@ class Scanner {
 		if (!$fork)
 			QueueServer::addMessage($url);
 
-
-		$this->curl = curl_init();
-
-		$func = '$this->scan()';
-
 		$channel = QueueServer::getChannel();
-		QueueServer::setCallback($func);
+		QueueServer::setCallback('scan');
 
 		while(count($channel->callbacks)) {
 			$channel->wait();
@@ -52,13 +64,19 @@ class Scanner {
 	 */
 	private function _getUrl($url) {
 
+		if(!$this->curl) {
+			$this->curl = curl_init();
+		}
+
 		curl_setopt($this->curl, CURLOPT_URL, $url);
 		curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($this->curl, CURLOPT_FOLLOWLOCATION, 1);
 		return curl_exec($this->curl);
 	}
 
-	private function scan($url=null) {
+	public function scan($url=null) {
+
+		if (self::$instance === null) new Exception('Call without instance', 1);
 
 		$data = $this->_getUrl($url);
 
@@ -94,7 +112,9 @@ class Scanner {
 	private function addSiteMapUrl($url) {
 		// Get list already parsed urls
 		$this->sitemap = ScannerStorage::get('sitemap');
-
+		if($this->sitemap === null) {
+			$this->sitemap = array();
+		};
 		if (!in_array($url,$this->sitemap)) {
 			$this->sitemap[] = $url;
 			ScannerStorage::set('sitemap', $this->sitemap);
@@ -108,7 +128,9 @@ class Scanner {
 	private function addNeedParseUrl($url) {
 		// Get parsing list for validation
 		$this->needParse = ScannerStorage::get('parsing');
-
+		if($this->needParse === null) {
+			$this->needParse = array();
+		};
 		if (!in_array($url,$this->needParse) && !in_array($url,$this->sitemap)) {
 			$this->needParse[] = $url;
 			ScannerStorage::set('parsing', $this->needParse);
@@ -117,17 +139,8 @@ class Scanner {
 		}
 	}
 
-	/**
-	 * Write link to list parsed link.
-	 * @param $url
-	 */
-	private function writeParsedLink($url) {
-		$f = fopen('links.txt', "a+");
-		fwrite($f, $url.PHP_EOL);
-		fclose($f);
-	}
-
 	public function __destruct() {
-		curl_close($this->curl);
+		if ($this->curl)
+			curl_close($this->curl);
 	}
 } 

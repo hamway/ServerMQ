@@ -7,9 +7,14 @@
  */
 
 require_once 'php-amqplib/vendor/autoload.php';
-require_once 'ScannerStorage.php';
-require_once 'QueueServer.php';
-require_once 'Scanner.php';
+
+function _autoload($class) {
+	require_once 'libs/'.$class.'.php';
+}
+
+spl_autoload_register('_autoload');
+
+$scanner = new Scanner();
 
 if (!isset($argv[1]))
 	$argv[1] = null;
@@ -19,10 +24,10 @@ switch($argv[1]) {
 		print_r(ScannerStorage::capacity());
 		break;
 	case "client":
-		new Scanner('7gw.ru', '/', true);
+		$scanner->start('7gw.ru', '/', true);
 		break;
 	case "server":
-		new Scanner('7gw.ru', '/');
+		$scanner->start('7gw.ru', '/');
 		break;
 	default:
 		echo "Usage: php index.php [COMMAND]", PHP_EOL, "\tserver - Run as first command", PHP_EOL,

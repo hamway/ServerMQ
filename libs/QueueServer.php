@@ -11,6 +11,8 @@ use PhpAmqpLib\Message\AMQPMessage;
 
 class QueueServer {
 
+	protected static $instance;
+
 	const HOST = 'localhost';
 	const PORT = 5672;
 	const USER = 'scanner';
@@ -34,6 +36,12 @@ class QueueServer {
 	//private $debug = true;
 
 	private static $callback;
+
+	public static function getInstance() {
+		return (self::$instance === null) ?
+			self::$instance = new self() :
+			self::$instance;
+	}
 
 	private function _connect() {
 		if (self::$connection) return true;
@@ -65,7 +73,8 @@ class QueueServer {
 					false,
 					false,
 					function($msg) {
-						$this->process($msg);
+						$queue = QueueServer::getInstance();
+						$queue->process($msg);
 					});
 			}
 		}
@@ -74,17 +83,16 @@ class QueueServer {
 	/**
 	 * @param $message \PhpAmqpLib\Message\AMQPMessage
 	 */
-	private function process($message) {
+	public function process($message) {
 		if ($message->body === 'quit') {
 			$message->delivery_info['channel']->
 				basic_cancel($message->delivery_info['consumer_tag']);
 		}
 
-		if(self::$callback)
-			call_user_func(self::$callback, $message->body);
-
-		//$this->writeParsedLink($msg->body);
-
+		if(self::$callback) {
+			$scanner = Scanner::getInstance();
+			$scanner->{self::$callback}($message->body);
+		}
 		$message->delivery_info['channel']->
 			basic_ack($message->delivery_info['delivery_tag']);
 	}

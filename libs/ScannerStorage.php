@@ -6,7 +6,7 @@
  * Time: 11:29
  */
 
-class ScannerStorage {
+class ScannerStorage implements Storage {
 
 	const HOST = 'localhost';
 	const PORT = 6379;
@@ -18,7 +18,7 @@ class ScannerStorage {
 	/** @var  Redis */
 	private static $redis;
 
-	private static function _connect() {
+	public static function _connect() {
 		if (!self::$redis) {
 			self::$redis = new Redis();
 			self::$redis->connect(self::HOST,self::PORT,self::TIMEOUT);
@@ -32,7 +32,6 @@ class ScannerStorage {
 	}
 
 	public static function get($name) {
-
 		self::_connect();
 
 		$result = self::$redis->get($name);
@@ -70,6 +69,18 @@ class ScannerStorage {
 		}
 
 		return $result;
+	}
+
+	public static function getParams($name) {
+		$params = self::get('params::'.$name);
+		if ($params === null)
+			return null;
+		else
+			return $params;
+	}
+
+	public static function setParams($name, $value) {
+		self::set('params::'.$name, $value);
 	}
 
 	public function __destruct() {
