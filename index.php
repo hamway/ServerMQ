@@ -19,6 +19,11 @@ $scanner = new Scanner();
 if (!isset($argv[1]))
 	$argv[1] = null;
 
+if (!isset($argv[2]))
+	$argv[2] = 'default.json';
+
+$config = json_decode(file_get_contents($argv[2]));
+
 switch($argv[1]) {
 	case "count":
 		print_r(ScannerStorage::capacity());
@@ -29,8 +34,14 @@ switch($argv[1]) {
 	case "server":
 		$scanner->start('7gw.ru', '/');
 		break;
+	case "test":
+		print_r($config);
+		break;
 	default:
-		echo "Usage: php index.php [COMMAND]", PHP_EOL, "\tserver - Run as first command", PHP_EOL,
-		"\tclient - add worker to server", PHP_EOL, "\tcount - show count parsed links", PHP_EOL;
+		echo
+		"Usage: php index.php [COMMAND]", PHP_EOL,
+			"\tserver - Run as first command", PHP_EOL,
+			"\tclient - add worker to server", PHP_EOL,
+			"\tcount - show count parsed links", PHP_EOL;
 }
 
