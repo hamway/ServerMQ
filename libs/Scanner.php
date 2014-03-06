@@ -27,7 +27,15 @@ class Scanner {
 		$this->path = ScannerStorage::getParams('path');
 	}
 
+	private function generateScannerHash($domain, $path, $timestamp) {
+		return hash('sha256',$domain.'-'.$path.'-'.$timestamp);
+	}
+
 	public function start($domain = false, $path = "", $fork = false) {
+		$hash = $this->generateScannerHash($domain, $path, time());
+
+		echo "Scanner information:", PHP_EOL, "hash: ", $hash, PHP_EOL, "Use this hash for client connection", PHP_EOL;
+
 		if(!$fork)
 			ScannerStorage::clean();
 
