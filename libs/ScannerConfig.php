@@ -14,5 +14,6 @@ namespace ServerMQ;
  */
 class ScannerConfig {
    public $host;
-   public $path;
+   public $domain;
+   public $scheme;
 }

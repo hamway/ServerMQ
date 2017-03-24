@@ -16,8 +16,8 @@ class QueueServer {
 
 	const HOST = 'localhost';
 	const PORT = 5672;
-	const USER = 'scanner';
-	const PASS = 'scanner';
+	const USER = 'guest';
+	const PASS = 'guest';
 	const VHOST = '/';
 
 	private static $config = array(

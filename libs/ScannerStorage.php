@@ -25,7 +25,7 @@ class ScannerStorage implements Storage {
 		if (!self::$redis) {
 			self::$redis = new \Redis();
 			self::$redis->connect(self::HOST,self::PORT,self::TIMEOUT);
-			self::$redis->_prefix(self::$prefix);
+//			self::$redis->_prefix(self::$prefix);
 		}
 	}
 
@@ -77,13 +77,17 @@ class ScannerStorage implements Storage {
 
 	public static function getParams(string $name) : string {
 		$params = self::get('params::'.$name);
-		if ($params === null)
-			return null;
-		else
-			return $params;
+
+		var_dump('params::'.$name, $params);
+		if ($params === null) {
+		    die;
+            return null;
+        } else {
+            return $params;
+        }
 	}
 
-	public static function setParams($name, $value) : void {
+	public static function setParams($name, $value) {
 		self::set('params::'.$name, $value);
 	}
 

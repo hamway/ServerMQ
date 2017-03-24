@@ -9,6 +9,7 @@ declare(strict_types=1);
 namespace ServerMQ;
 
 class Scanner {
+	private $scheme;
 	private $domain;
 	private $path;
 	protected static $instance;
@@ -25,6 +26,7 @@ class Scanner {
 	}
 
 	public function __construct() {
+		$this->scheme = ScannerStorage::getParams('scheme');
 		$this->domain = ScannerStorage::getParams('domain');
 		$this->path = ScannerStorage::getParams('path');
 	}
@@ -54,7 +56,7 @@ class Scanner {
 		ScannerStorage::setParams('path', $path);
 
 
-		$url = "http://". $domain;
+		$url = $this->scheme . "://". $domain;
 
 		if ($this->path) {
 			$url .= $path;

@@ -20,25 +20,32 @@ class Server {
     /** @var null|ScannerConfig  */
     protected $config = null;
 
+    protected $filename = 'default.json';
+
+    function __construct($filename = null) {
+        if ($filename) {
+            $this->filename = $filename;
+        }
+    }
+
     protected function init() {
+        $this->initConfig();
+
         if ($this->scanner === null) {
             $this->scanner = new Scanner();
         }
-
-        $this->initConfig();
     }
 
     protected function initConfig() {
         if ($this->config === null) {
-            $filename = (!isset($argv[2])) ? $argv[2] : 'default.json';
-
-            $config = json_decode(file_get_contents($filename));
+            $config = json_decode(file_get_contents(__DIR__ . '/config/' .$this->filename), true);
 
             if  ($config) {
                 $this->config = new ScannerConfig();
 
                 foreach ($config as $key => $item) {
                     $this->config->$key = $item;
+                    ScannerStorage::setParams($key, $item);
                 }
             }
         }
@@ -96,4 +103,4 @@ class Server {
    }
 }
 
-(new Server())->run($argv[1]);
+(new Server($argv[2]))->run($argv[1]);
