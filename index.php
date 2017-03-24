@@ -17,8 +17,6 @@ require_once __DIR__ .'/vendor/autoload.php';
 class Server {
     /** @var null|Scanner */
     protected $scanner = null;
-    /** @var null|ScannerConfig  */
-    protected $config = null;
 
     protected $filename = 'default.json';
 
@@ -29,25 +27,8 @@ class Server {
     }
 
     protected function init() {
-        $this->initConfig();
-
         if ($this->scanner === null) {
             $this->scanner = new Scanner();
-        }
-    }
-
-    protected function initConfig() {
-        if ($this->config === null) {
-            $config = json_decode(file_get_contents(__DIR__ . '/config/' .$this->filename), true);
-
-            if  ($config) {
-                $this->config = new ScannerConfig();
-
-                foreach ($config as $key => $item) {
-                    $this->config->$key = $item;
-                    ScannerStorage::setParams($key, $item);
-                }
-            }
         }
     }
 

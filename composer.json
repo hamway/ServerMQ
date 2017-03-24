@@ -1,0 +1,19 @@
+{
+    "name": "eanoykin/server-mq",
+    "type": "project",
+    "authors": [
+        {
+            "name": "Evgeny Anoykin",
+            "email": "e.anoykin@artsofte.ru"
+        }
+    ],
+    "require": {
+        "php": ">=7.0",
+        "videlalvaro/php-amqplib": "2.6.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "ServerMQ\\": "libs"
+        }
+    }
+}
