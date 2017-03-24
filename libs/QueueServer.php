@@ -5,6 +5,7 @@
  * Date: 28.02.14
  * Time: 16:27
  */
+namespace ServerMQ;
 
 use PhpAmqpLib\Connection\AMQPConnection;
 use PhpAmqpLib\Message\AMQPMessage;

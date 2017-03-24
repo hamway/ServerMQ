@@ -5,6 +5,7 @@
  * Date: 28.02.14
  * Time: 11:29
  */
+namespace ServerMQ;
 
 class ScannerStorage implements Storage {
 
@@ -15,13 +16,16 @@ class ScannerStorage implements Storage {
 
 	const JSON = 1;
 
-	/** @var  Redis */
+	/** @var  \Redis */
 	private static $redis;
+
+	private static $prefix = 'ServerMQ';
 
 	public static function _connect() {
 		if (!self::$redis) {
-			self::$redis = new Redis();
+			self::$redis = new \Redis();
 			self::$redis->connect(self::HOST,self::PORT,self::TIMEOUT);
+			self::$redis->_prefix(self::$prefix);
 		}
 	}
 
@@ -56,7 +60,7 @@ class ScannerStorage implements Storage {
 	public static function capacity() {
 		self::_connect();
 
-		$keys = self::$redis->keys('*');
+		$keys = self::$redis->keys(self::$prefix . '*');
 		$result = array();
 		foreach ($keys as $key) {
 			$data = self::$redis->get($key);
@@ -71,7 +75,7 @@ class ScannerStorage implements Storage {
 		return $result;
 	}
 
-	public static function getParams($name) {
+	public static function getParams(string $name) : string {
 		$params = self::get('params::'.$name);
 		if ($params === null)
 			return null;
@@ -79,7 +83,7 @@ class ScannerStorage implements Storage {
 			return $params;
 	}
 
-	public static function setParams($name, $value) {
+	public static function setParams($name, $value) : void {
 		self::set('params::'.$name, $value);
 	}
 

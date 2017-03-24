@@ -5,6 +5,8 @@
  * Date: 27.02.14
  * Time: 15:41
  */
+declare(strict_types=1);
+namespace ServerMQ;
 
 class Scanner {
 	private $domain;
@@ -27,7 +29,13 @@ class Scanner {
 		$this->path = ScannerStorage::getParams('path');
 	}
 
-	private function generateScannerHash($domain, $path, $timestamp) {
+    /**
+     * @param mixed $domain
+     * @param string $path
+     * @param int $timestamp
+     * @return string
+     */
+	private function generateScannerHash($domain, string $path, int $timestamp) : string {
 		return hash('sha256',$domain.'-'.$path.'-'.$timestamp);
 	}
 
@@ -84,7 +92,7 @@ class Scanner {
 
 	public function scan($url=null) {
 
-		if (self::$instance === null) new Exception('Call without instance', 1);
+		if (self::$instance === null) new \Exception('Call without instance', 1);
 
 		$data = $this->_getUrl($url);
 
